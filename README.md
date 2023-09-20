@@ -1,5 +1,8 @@
 # zktc-asm
 
+[![Rust](https://github.com/kinpoko/zktc-asm/actions/workflows/rust.yml/badge.svg)](https://github.com/kinpoko/zktc-asm/actions/workflows/rust.yml)
+![License](https://img.shields.io/github/license/kinpoko/zktc-asm?color=blue)
+
 zktc-asm は Rust で実装された [ZKTC](https://github.com/kinpoko/zktc)用のアセンブラです。命令セットに関しては [こちら](https://github.com/kinpoko/zktc#%E5%91%BD%E4%BB%A4%E3%82%BB%E3%83%83%E3%83%88)を参照してください。
 
 # インストール
