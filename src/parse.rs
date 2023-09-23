@@ -44,7 +44,7 @@ pub struct Label {
 }
 
 pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
-    let mut expr: Vec<Expr> = Vec::new();
+    let mut exprs: Vec<Expr> = Vec::new();
     let mut label_table: Vec<Label> = Vec::new();
     let mut address: u16 = 0;
 
@@ -53,8 +53,8 @@ pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
         if line.trim().is_empty() || line.trim().starts_with("//") {
             continue;
         }
-        match parse_expr(line) {
-            Ok((_, e)) => match e {
+        match parse_line(line) {
+            Ok((_, expr)) => match expr {
                 Expr::Label { name, .. } => {
                     label_table.push(Label { name, address });
                 }
@@ -67,7 +67,7 @@ pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
                     symbol,
                     ..
                 } => {
-                    expr.push(Expr::Inst {
+                    exprs.push(Expr::Inst {
                         inst_type,
                         mnemonic,
                         rd,
@@ -79,7 +79,7 @@ pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
                     address += 2;
                 }
                 Expr::Const { val, .. } => {
-                    expr.push(Expr::Const { val, address });
+                    exprs.push(Expr::Const { val, address });
                     address += 2;
                 }
             },
@@ -88,10 +88,10 @@ pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
             }
         }
     }
-    Ok((expr, label_table))
+    Ok((exprs, label_table))
 }
 
-fn parse_expr(line: &str) -> IResult<&str, Expr> {
+fn parse_line(line: &str) -> IResult<&str, Expr> {
     let (line, _) = multispace0(line)?;
     let result = alt((parse_inst, parse_word, parse_label))(line)?;
     Ok(result)
@@ -279,13 +279,13 @@ mod test {
     use std::io::{BufReader, Read};
 
     #[test]
-    fn can_parse_all_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/all_inst_test.asm").unwrap();
+    fn can_parse_r_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/r_inst_test.asm").unwrap();
         let mut reader = BufReader::new(file);
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (.., result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -293,66 +293,450 @@ mod test {
             },
             Label {
                 name: "end".to_string(),
-                address: 74,
+                address: 18,
             },
         ];
-        assert_eq!(result_label_table, expect_label_table);
-
-        Ok(())
-    }
-
-    #[test]
-    fn can_parse_reg_name() -> Result<()> {
-        let file = std::fs::File::open("asm/reg_name_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
-
-        let (.., result_label_table) = parse(text)?;
-        let expect_label_table: Vec<Label> = vec![
-            Label {
-                name: "start".to_string(),
-                address: 0,
-            },
-            Label {
-                name: "end".to_string(),
-                address: 8,
-            },
-        ];
-        assert_eq!(result_label_table, expect_label_table);
-
-        Ok(())
-    }
-
-    #[test]
-    fn can_parse_comment() -> Result<()> {
-        let file = std::fs::File::open("asm/comment_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
-
-        let (result_expr, ..) = parse(text)?;
-        let expect_expr: Vec<Expr> = vec![
+        let expect_exprs: Vec<Expr> = vec![
             Expr::Inst {
                 inst_type: InstType::R,
                 mnemonic: "mov".to_string(),
-                rd: "x1".to_string(),
-                rs: "x2".to_string(),
+                rd: "x0".to_string(),
+                rs: "zero".to_string(),
                 imm: "".to_string(),
                 symbol: "".to_string(),
                 address: 0,
             },
             Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "add".to_string(),
+                rd: "x1".to_string(),
+                rs: "ra".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 2,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "sub".to_string(),
+                rd: "x2".to_string(),
+                rs: "fp".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 4,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "and".to_string(),
+                rd: "x3".to_string(),
+                rs: "a0".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 6,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "or".to_string(),
+                rd: "x4".to_string(),
+                rs: "a1".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 8,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "xor".to_string(),
+                rd: "x5".to_string(),
+                rs: "a2".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 10,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "sll".to_string(),
+                rd: "x6".to_string(),
+                rs: "t0".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 12,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "srl".to_string(),
+                rd: "x7".to_string(),
+                rs: "t1".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 14,
+            },
+            Expr::Inst {
+                inst_type: InstType::R,
+                mnemonic: "sra".to_string(),
+                rd: "x0".to_string(),
+                rs: "x1".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 16,
+            },
+        ];
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_i5_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/i5_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (result_exprs, result_label_table) = parse(text)?;
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "start".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "end".to_string(),
+                address: 22,
+            },
+        ];
+        let expect_exprs: Vec<Expr> = vec![
+            Expr::Inst {
                 inst_type: InstType::I5,
                 mnemonic: "addi".to_string(),
+                rd: "x0".to_string(),
+                rs: "zero".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 0,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "subi".to_string(),
                 rd: "x1".to_string(),
-                rs: "x2".to_string(),
+                rs: "ra".to_string(),
                 imm: "1".to_string(),
                 symbol: "".to_string(),
                 address: 2,
             },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "beq".to_string(),
+                rd: "x2".to_string(),
+                rs: "fp".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 4,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "bnq".to_string(),
+                rd: "x3".to_string(),
+                rs: "a0".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 6,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "blt".to_string(),
+                rd: "x4".to_string(),
+                rs: "a1".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 8,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "bge".to_string(),
+                rd: "x5".to_string(),
+                rs: "a2".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 10,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "bltu".to_string(),
+                rd: "x6".to_string(),
+                rs: "t0".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 12,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "bgeu".to_string(),
+                rd: "x7".to_string(),
+                rs: "t1".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 14,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "jalr".to_string(),
+                rd: "x0".to_string(),
+                rs: "x1".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 16,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "lw".to_string(),
+                rd: "x2".to_string(),
+                rs: "x3".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 18,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "sw".to_string(),
+                rd: "x4".to_string(),
+                rs: "x5".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 20,
+            },
         ];
-        assert_eq!(result_expr, expect_expr);
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_i8_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/i8_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (result_exprs, result_label_table) = parse(text)?;
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "start".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "end".to_string(),
+                address: 6,
+            },
+        ];
+        let expect_exprs: Vec<Expr> = vec![
+            Expr::Inst {
+                inst_type: InstType::I8,
+                mnemonic: "jal".to_string(),
+                rd: "zero".to_string(),
+                rs: "".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 0,
+            },
+            Expr::Inst {
+                inst_type: InstType::I8,
+                mnemonic: "lil".to_string(),
+                rd: "ra".to_string(),
+                rs: "".to_string(),
+                imm: "0x1".to_string(),
+                symbol: "l".to_string(),
+                address: 2,
+            },
+            Expr::Inst {
+                inst_type: InstType::I8,
+                mnemonic: "lih".to_string(),
+                rd: "fp".to_string(),
+                rs: "".to_string(),
+                imm: "0x1".to_string(),
+                symbol: "h".to_string(),
+                address: 4,
+            },
+        ];
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_c1_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/c1_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (result_exprs, result_label_table) = parse(text)?;
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "start".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "end".to_string(),
+                address: 22,
+            },
+        ];
+        let expect_exprs: Vec<Expr> = vec![
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "push".to_string(),
+                rd: "zero".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 0,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "pop".to_string(),
+                rd: "ra".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 2,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "rpc".to_string(),
+                rd: "fp".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 4,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "rsp".to_string(),
+                rd: "a0".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 6,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "rpsr".to_string(),
+                rd: "a1".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 8,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "rtlr".to_string(),
+                rd: "a2".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 10,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "rthr".to_string(),
+                rd: "t0".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 12,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wsp".to_string(),
+                rd: "t1".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 14,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wpsr".to_string(),
+                rd: "x0".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 16,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wtlr".to_string(),
+                rd: "x1".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 18,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wthr".to_string(),
+                rd: "x2".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 20,
+            },
+        ];
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_c2_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/c2_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (result_exprs, result_label_table) = parse(text)?;
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "start".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "end".to_string(),
+                address: 6,
+            },
+        ];
+        let expect_exprs: Vec<Expr> = vec![
+            Expr::Inst {
+                inst_type: InstType::C2,
+                mnemonic: "rfi".to_string(),
+                rd: "".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 0,
+            },
+            Expr::Inst {
+                inst_type: InstType::C2,
+                mnemonic: "rtr".to_string(),
+                rd: "".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 2,
+            },
+            Expr::Inst {
+                inst_type: InstType::C2,
+                mnemonic: "wtr".to_string(),
+                rd: "".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 4,
+            },
+        ];
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
 
         Ok(())
     }
@@ -364,8 +748,8 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_expr, result_label_table) = parse(text)?;
-        let expect_expr: Vec<Expr> = vec![
+        let (result_exprs, result_label_table) = parse(text)?;
+        let expect_exprs: Vec<Expr> = vec![
             Expr::Const {
                 val: "ffff".to_string(),
                 address: 0,
@@ -388,21 +772,12 @@ mod test {
                 symbol: "h".to_string(),
                 address: 4,
             },
-            Expr::Inst {
-                inst_type: InstType::I5,
-                mnemonic: "sw".to_string(),
-                rd: "x2".to_string(),
-                rs: "x1".to_string(),
-                imm: "0".to_string(),
-                symbol: "".to_string(),
-                address: 6,
-            },
         ];
         let expect_label_table: Vec<Label> = vec![Label {
             name: "word".to_string(),
             address: 0,
         }];
-        assert_eq!(result_expr, expect_expr);
+        assert_eq!(result_exprs, expect_exprs);
         assert_eq!(result_label_table, expect_label_table);
 
         Ok(())

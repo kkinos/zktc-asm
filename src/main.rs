@@ -18,14 +18,14 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let file = std::fs::File::open(&args.file_path)
+    let asm_file = std::fs::File::open(&args.file_path)
         .with_context(|| format!("could not read file '{}'", &args.file_path.display()))?;
-    let mut reader = BufReader::new(file);
+    let mut reader = BufReader::new(asm_file);
     let mut text = String::new();
     reader.read_to_string(&mut text)?;
 
-    let (expr, label_table) = parse::parse(text)?;
-    let words = gen::gen(expr, label_table)?;
+    let (exprs, label_table) = parse::parse(text)?;
+    let words = gen::gen(exprs, label_table)?;
 
     let mut output_file = std::fs::File::create(&args.output_file_name)
         .with_context(|| "could not create file".to_string())?;

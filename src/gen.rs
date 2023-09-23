@@ -1,11 +1,11 @@
 use crate::parse::{Expr, InstType, Label};
 use anyhow::{anyhow, Context, Result};
 
-pub fn gen(expr: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
+pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
     let mut words: Vec<u16> = Vec::new();
 
-    'outer: for e in expr {
-        match e {
+    'outer: for expr in exprs {
+        match expr {
             Expr::Inst {
                 inst_type,
                 mnemonic,
@@ -206,39 +206,141 @@ mod test {
     use std::io::{BufReader, Read};
 
     #[test]
-    fn can_gen_test_asms() -> Result<()> {
-        let file = std::fs::File::open("asm/all_inst_test.asm").unwrap();
+    fn can_gen_r_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/r_inst_test.asm").unwrap();
         let mut reader = BufReader::new(file);
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (expr, label_table) = parse(text)?;
-        gen(expr, label_table)?;
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b0000_1000_0000_0000,
+            0b0001_0001_0010_0000,
+            0b0001_1010_0100_0000,
+            0b0010_0011_0110_0000,
+            0b0010_1100_1000_0000,
+            0b0011_0101_1010_0000,
+            0b0011_1110_1100_0000,
+            0b0100_0111_1110_0000,
+            0b0100_1001_0000_0000,
+        ];
 
-        let file = std::fs::File::open("asm/comment_test.asm").unwrap();
+        assert_eq!(result_words, expect_words);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_gen_i5_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/i5_inst_test.asm").unwrap();
         let mut reader = BufReader::new(file);
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (expr, label_table) = parse(text)?;
-        gen(expr, label_table)?;
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b0000_1000_0000_0001,
+            0b0000_1001_0010_0010,
+            0b0000_1010_0100_0011,
+            0b1111_1011_0110_0100,
+            0b0000_1100_1000_0101,
+            0b1111_1101_1010_0110,
+            0b0000_1110_1100_0111,
+            0b1111_1111_1110_1000,
+            0b0000_1001_0000_1001,
+            0b1111_1011_0100_1010,
+            0b0000_1101_1000_1011,
+        ];
 
-        let file = std::fs::File::open("asm/reg_name_test.asm").unwrap();
+        assert_eq!(result_words, expect_words);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_gen_i8_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/i8_inst_test.asm").unwrap();
         let mut reader = BufReader::new(file);
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (expr, label_table) = parse(text)?;
-        gen(expr, label_table)?;
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b0000_0001_0000_1100,
+            0b0000_0001_0010_1101,
+            0b0000_0000_0100_1110,
+        ];
 
+        assert_eq!(result_words, expect_words);
+        Ok(())
+    }
+
+    #[test]
+    fn can_gen_c1_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/c1_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b0000_1000_0001_1110,
+            0b0001_0000_0011_1110,
+            0b0001_1000_0101_1110,
+            0b0010_0000_0111_1110,
+            0b0010_1000_1001_1110,
+            0b0011_0000_1011_1110,
+            0b0011_1000_1101_1110,
+            0b0100_0000_1111_1110,
+            0b0100_1000_0001_1110,
+            0b0101_0000_0011_1110,
+            0b0101_1000_0101_1110,
+        ];
+
+        assert_eq!(result_words, expect_words);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_gen_c2_inst() -> Result<()> {
+        let file = std::fs::File::open("asm/c2_inst_test.asm").unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b0000_1000_0001_1111,
+            0b0001_0000_0001_1111,
+            0b0001_1000_0001_1111,
+        ];
+
+        assert_eq!(result_words, expect_words);
+        Ok(())
+    }
+
+    #[test]
+    fn can_gen_word() -> Result<()> {
         let file = std::fs::File::open("asm/word_test.asm").unwrap();
         let mut reader = BufReader::new(file);
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (expr, label_table) = parse(text)?;
-        gen(expr, label_table)?;
+        let (exprs, label_table) = parse(text)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![
+            0b1111_1111_1111_1111,
+            0b0000_0000_0010_1101,
+            0b0000_0000_0010_1110,
+        ];
 
+        assert_eq!(result_words, expect_words);
         Ok(())
     }
 }
