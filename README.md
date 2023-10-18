@@ -21,7 +21,8 @@ cargo build --release
 ```
 start:
 	lil x1, msg@l
-	lih x1, msg@h
+	lih x2, msg@h
+	or x1, x2
 	sw x2, x1, 0
 	sw x3, x1, 2
 msg:
@@ -35,9 +36,11 @@ mem ファイルにアセンブルできます。mem ファイルはテキスト
 zktc-asm sample.asm -o sample.mem
 cat sample.mem
 2d
-08
-2e
+0a
+4e
 00
+20
+2a
 4b
 01
 6b
@@ -56,7 +59,7 @@ cat sample.mem
 基本的には以下の順序です。
 
 ```asm
-mnemonic destination register, source register
+mnemonic destination register, source register, immediate value
 ```
 
 使用できるレジスタは[こちら](https://github.com/kinpoko/zktc/tree/main#%E6%B1%8E%E7%94%A8%E3%83%AC%E3%82%B8%E3%82%B9%E3%82%BFgr)を参照してください。
@@ -80,7 +83,7 @@ addi x1, x0, 1 // comment
 
 ## ラベル
 
-以下のようにしてアドレスに名前をつけることができます。
+`label:`を用いてアドレスに名前をつけることができます。
 
 ```asm
 start:
@@ -89,7 +92,7 @@ start:
 
 ## シンボル
 
-数値やラベルと組み合わせることで、それらの上位 8 ビット、下位 8 ビットを表現できます。
+`@h @l`を用いて数値やラベルと組み合わせることで、それらの上位 8 ビット、下位 8 ビットを表現できます。
 
 ```asm
 start:
