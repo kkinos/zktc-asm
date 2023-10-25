@@ -212,7 +212,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b0000_1000_0000_0000,
@@ -238,7 +238,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b0000_1000_0000_0001,
@@ -266,7 +266,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b0000_0001_0000_1100,
@@ -285,7 +285,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b0000_1000_0001_1110,
@@ -313,7 +313,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b0000_1000_0001_1111,
@@ -332,7 +332,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (exprs, label_table) = parse(text)?;
+        let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
         let expect_words: Vec<u16> = vec![
             0b1111_1111_1111_1111,

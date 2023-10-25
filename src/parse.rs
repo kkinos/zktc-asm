@@ -43,10 +43,10 @@ pub struct Label {
     pub address: u16,
 }
 
-pub fn parse(text: String) -> Result<(Vec<Expr>, Vec<Label>)> {
+pub fn parse(text: String, base_address: u16) -> Result<(Vec<Expr>, Vec<Label>)> {
     let mut exprs: Vec<Expr> = Vec::new();
     let mut label_table: Vec<Label> = Vec::new();
-    let mut address: u16 = 0;
+    let mut address: u16 = base_address;
 
     for (line_num, line) in text.lines().enumerate() {
         // delete empty line and comment
@@ -285,7 +285,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -392,7 +392,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -517,7 +517,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -570,7 +570,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -695,7 +695,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
             Label {
                 name: "start".to_string(),
@@ -748,7 +748,7 @@ mod test {
         let mut text = String::new();
         reader.read_to_string(&mut text).unwrap();
 
-        let (result_exprs, result_label_table) = parse(text)?;
+        let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_exprs: Vec<Expr> = vec![
             Expr::Const {
                 val: "ffff".to_string(),
