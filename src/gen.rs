@@ -152,10 +152,14 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                         "rpsr" => 0b00101,
                         "rtlr" => 0b00110,
                         "rthr" => 0b00111,
-                        "wsp" => 0b01000,
-                        "wpsr" => 0b01001,
-                        "wtlr" => 0b01010,
-                        "wthr" => 0b01011,
+                        "rppc" => 0b01000,
+                        "rppsr" => 0b01001,
+                        "wsp" => 0b01010,
+                        "wpsr" => 0b01011,
+                        "wtlr" => 0b01100,
+                        "wthr" => 0b01101,
+                        "wppc" => 0b01110,
+                        "wppsr" => 0b01111,
                         _ => unreachable!(),
                     };
                     let rd = gen_reg(rd)?;
@@ -170,6 +174,10 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                         _ => unreachable!(),
                     };
                     let word: u16 = 0x001F | (func & 0x001F) << 11;
+                    words.push(word);
+                }
+                InstType::Trap => {
+                    let word: u16 = 0xFFFF;
                     words.push(word);
                 }
             },
@@ -207,10 +215,7 @@ mod test {
 
     #[test]
     fn can_gen_r_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/r_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/r_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -233,10 +238,7 @@ mod test {
 
     #[test]
     fn can_gen_i5_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/i5_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/i5_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -261,10 +263,7 @@ mod test {
 
     #[test]
     fn can_gen_i8_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/i8_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/i8_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -280,10 +279,7 @@ mod test {
 
     #[test]
     fn can_gen_c1_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/c1_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/c1_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -299,6 +295,10 @@ mod test {
             0b0100_1000_0001_1110,
             0b0101_0000_0011_1110,
             0b0101_1000_0101_1110,
+            0b0110_0000_0111_1110,
+            0b0110_1000_1001_1110,
+            0b0111_0000_1011_1110,
+            0b0111_1000_1101_1110,
         ];
 
         assert_eq!(result_words, expect_words);
@@ -308,10 +308,7 @@ mod test {
 
     #[test]
     fn can_gen_c2_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/c2_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/c2_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -326,11 +323,20 @@ mod test {
     }
 
     #[test]
+    fn can_gen_trap_inst() -> Result<()> {
+        let text = load_test_asm("asm/trap_inst_test.asm");
+
+        let (exprs, label_table) = parse(text, 0)?;
+        let result_words = gen(exprs, label_table)?;
+        let expect_words: Vec<u16> = vec![0b1111_1111_1111_1111];
+
+        assert_eq!(result_words, expect_words);
+        Ok(())
+    }
+
+    #[test]
     fn can_gen_word() -> Result<()> {
-        let file = std::fs::File::open("asm/word_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/word_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
         let result_words = gen(exprs, label_table)?;
@@ -342,5 +348,13 @@ mod test {
 
         assert_eq!(result_words, expect_words);
         Ok(())
+    }
+
+    fn load_test_asm(path: &str) -> String {
+        let file = std::fs::File::open(path).unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+        text
     }
 }

@@ -35,6 +35,7 @@ pub enum InstType {
     I8,
     C1,
     C2,
+    Trap,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -198,8 +199,8 @@ fn parse_inst(line: &str) -> IResult<&str, Expr> {
         }
 
         // C1 Instruction
-        "push" | "pop" | "rpc" | "rsp" | "rpsr" | "rtlr" | "rthr" | "wsp" | "wpsr" | "wtlr"
-        | "wthr" => {
+        "push" | "pop" | "rpc" | "rsp" | "rpsr" | "rtlr" | "rthr" | "rppc" | "rppsr" | "wsp"
+        | "wpsr" | "wtlr" | "wthr" | "wppc" | "wppsr" => {
             let (line, _) = multispace0(line)?;
             let (line, rd) = alphanumeric1(line)?;
             Ok((
@@ -221,6 +222,20 @@ fn parse_inst(line: &str) -> IResult<&str, Expr> {
             line,
             Expr::Inst {
                 inst_type: InstType::C2,
+                mnemonic: mnemonic.to_string(),
+                rd: "".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 0,
+            },
+        )),
+
+        // Trap Instruction
+        "trap" => Ok((
+            line,
+            Expr::Inst {
+                inst_type: InstType::Trap,
                 mnemonic: mnemonic.to_string(),
                 rd: "".to_string(),
                 rs: "".to_string(),
@@ -280,10 +295,7 @@ mod test {
 
     #[test]
     fn can_parse_r_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/r_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/r_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -387,10 +399,7 @@ mod test {
 
     #[test]
     fn can_parse_i5_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/i5_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/i5_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -512,10 +521,7 @@ mod test {
 
     #[test]
     fn can_parse_i8_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/i8_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/i8_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -565,10 +571,7 @@ mod test {
 
     #[test]
     fn can_parse_c1_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/c1_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/c1_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -578,7 +581,7 @@ mod test {
             },
             Label {
                 name: "end".to_string(),
-                address: 22,
+                address: 30,
             },
         ];
         let expect_exprs: Vec<Expr> = vec![
@@ -647,7 +650,7 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::C1,
-                mnemonic: "wsp".to_string(),
+                mnemonic: "rppc".to_string(),
                 rd: "t1".to_string(),
                 rs: "".to_string(),
                 imm: "".to_string(),
@@ -656,7 +659,7 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::C1,
-                mnemonic: "wpsr".to_string(),
+                mnemonic: "rppsr".to_string(),
                 rd: "x0".to_string(),
                 rs: "".to_string(),
                 imm: "".to_string(),
@@ -665,7 +668,7 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::C1,
-                mnemonic: "wtlr".to_string(),
+                mnemonic: "wsp".to_string(),
                 rd: "x1".to_string(),
                 rs: "".to_string(),
                 imm: "".to_string(),
@@ -674,12 +677,48 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::C1,
-                mnemonic: "wthr".to_string(),
+                mnemonic: "wpsr".to_string(),
                 rd: "x2".to_string(),
                 rs: "".to_string(),
                 imm: "".to_string(),
                 symbol: "".to_string(),
                 address: 20,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wtlr".to_string(),
+                rd: "x3".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 22,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wthr".to_string(),
+                rd: "x4".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 24,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wppc".to_string(),
+                rd: "x5".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 26,
+            },
+            Expr::Inst {
+                inst_type: InstType::C1,
+                mnemonic: "wppsr".to_string(),
+                rd: "x6".to_string(),
+                rs: "".to_string(),
+                imm: "".to_string(),
+                symbol: "".to_string(),
+                address: 28,
             },
         ];
         assert_eq!(result_label_table, expect_label_table);
@@ -690,10 +729,7 @@ mod test {
 
     #[test]
     fn can_parse_c2_inst() -> Result<()> {
-        let file = std::fs::File::open("asm/c2_inst_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/c2_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -742,11 +778,38 @@ mod test {
     }
 
     #[test]
+    fn can_parse_trap_inst() -> Result<()> {
+        let text = load_test_asm("asm/trap_inst_test.asm");
+
+        let (result_exprs, result_label_table) = parse(text, 0)?;
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "start".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "end".to_string(),
+                address: 2,
+            },
+        ];
+        let expect_exprs: Vec<Expr> = vec![Expr::Inst {
+            inst_type: InstType::Trap,
+            mnemonic: "trap".to_string(),
+            rd: "".to_string(),
+            rs: "".to_string(),
+            imm: "".to_string(),
+            symbol: "".to_string(),
+            address: 0,
+        }];
+        assert_eq!(result_label_table, expect_label_table);
+        assert_eq!(result_exprs, expect_exprs);
+
+        Ok(())
+    }
+
+    #[test]
     fn can_parse_word() -> Result<()> {
-        let file = std::fs::File::open("asm/word_test.asm").unwrap();
-        let mut reader = BufReader::new(file);
-        let mut text = String::new();
-        reader.read_to_string(&mut text).unwrap();
+        let text = load_test_asm("asm/word_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_exprs: Vec<Expr> = vec![
@@ -781,5 +844,13 @@ mod test {
         assert_eq!(result_label_table, expect_label_table);
 
         Ok(())
+    }
+
+    fn load_test_asm(path: &str) -> String {
+        let file = std::fs::File::open(path).unwrap();
+        let mut reader = BufReader::new(file);
+        let mut text = String::new();
+        reader.read_to_string(&mut text).unwrap();
+        text
     }
 }
