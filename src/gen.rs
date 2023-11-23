@@ -89,7 +89,7 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                     if mnemonic.as_str() == "jal" {
                         for label in &label_table {
                             if imm == label.name {
-                                let imm = label.address as i32 - address as i32 - 4;
+                                let imm = label.address as i32 - address as i32;
                                 if !(-128..=127).contains(&imm) {
                                     return Err(anyhow!("could not jump to {}", label.name));
                                 }
