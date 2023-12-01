@@ -295,7 +295,7 @@ mod test {
 
     #[test]
     fn can_parse_r_inst() -> Result<()> {
-        let text = load_test_asm("asm/r_inst_test.asm");
+        let text = load_test_asm("test/asm/r_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -399,7 +399,7 @@ mod test {
 
     #[test]
     fn can_parse_i5_inst() -> Result<()> {
-        let text = load_test_asm("asm/i5_inst_test.asm");
+        let text = load_test_asm("test/asm/i5_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -521,7 +521,7 @@ mod test {
 
     #[test]
     fn can_parse_i8_inst() -> Result<()> {
-        let text = load_test_asm("asm/i8_inst_test.asm");
+        let text = load_test_asm("test/asm/i8_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -571,7 +571,7 @@ mod test {
 
     #[test]
     fn can_parse_c1_inst() -> Result<()> {
-        let text = load_test_asm("asm/c1_inst_test.asm");
+        let text = load_test_asm("test/asm/c1_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -729,7 +729,7 @@ mod test {
 
     #[test]
     fn can_parse_c2_inst() -> Result<()> {
-        let text = load_test_asm("asm/c2_inst_test.asm");
+        let text = load_test_asm("test/asm/c2_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -779,7 +779,7 @@ mod test {
 
     #[test]
     fn can_parse_trap_inst() -> Result<()> {
-        let text = load_test_asm("asm/trap_inst_test.asm");
+        let text = load_test_asm("test/asm/trap_inst_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_label_table: Vec<Label> = vec![
@@ -809,7 +809,7 @@ mod test {
 
     #[test]
     fn can_parse_word() -> Result<()> {
-        let text = load_test_asm("asm/word_test.asm");
+        let text = load_test_asm("test/asm/word_test.asm");
 
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_exprs: Vec<Expr> = vec![

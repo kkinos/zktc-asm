@@ -99,3 +99,9 @@ start:
 	lil x1, 0x1111@l // low 8 bits
 	lih x2, start@h // high 8 bits
 ```
+
+# テスト
+
+```bash
+cargo test
+```
