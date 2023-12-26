@@ -30,14 +30,13 @@ fn main() -> Result<()> {
     reader.read_to_string(&mut text)?;
 
     let (exprs, label_table) = parse::parse(text, args.base_address)?;
-    let words = gen::gen(exprs, label_table)?;
+    let bytes = gen::gen(exprs, label_table)?;
 
     let mut output_file = std::fs::File::create(&args.output_file_name)
         .with_context(|| "could not create file".to_string())?;
 
-    for word in words {
-        writeln!(output_file, "{:02x}", word & 0x00FF)?;
-        writeln!(output_file, "{:02x}", (word & 0xFF00) >> 8)?;
+    for byte in bytes {
+        writeln!(output_file, "{:02x}", byte)?;
     }
 
     Ok(())

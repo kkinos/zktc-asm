@@ -1,8 +1,8 @@
-use crate::parse::{Expr, InstType, Label};
+use crate::parse::{ConstType, Expr, InstType, Label};
 use anyhow::{anyhow, Context, Result};
 
-pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
-    let mut words: Vec<u16> = Vec::new();
+pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u8>> {
+    let mut bytes: Vec<u8> = Vec::new();
 
     'outer: for expr in exprs {
         match expr {
@@ -31,7 +31,8 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                     let rd = gen_reg(rd)?;
                     let rs = gen_reg(rs)?;
                     let word: u16 = (rd & 0x0007) << 5 | (rs & 0x0007) << 8 | (func & 0x001F) << 11;
-                    words.push(word);
+                    bytes.push((word & 0x00FF) as u8);
+                    bytes.push(((word & 0xFF00) >> 8) as u8);
                 }
 
                 InstType::I5 => {
@@ -62,7 +63,8 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                             | (rd & 0x0007) << 5
                             | (rs & 0x0007) << 8
                             | (imm as u16 & 0x001F) << 11;
-                        words.push(word);
+                        bytes.push((word & 0x00FF) as u8);
+                        bytes.push(((word & 0xFF00) >> 8) as u8);
                     } else {
                         let imm = imm
                             .parse::<i8>()
@@ -74,7 +76,8 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                             | (rd & 0x0007) << 5
                             | (rs & 0x0007) << 8
                             | (imm as u16 & 0x001F) << 11;
-                        words.push(word);
+                        bytes.push((word & 0x00FF) as u8);
+                        bytes.push(((word & 0xFF00) >> 8) as u8);
                     }
                 }
                 InstType::I8 => {
@@ -96,7 +99,9 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                                 let word: u16 = opcode & 0x001F
                                     | (rd & 0x0007) << 5
                                     | (imm as u16 & 0x00FF) << 8;
-                                words.push(word);
+                                bytes.push((word & 0x00FF) as u8);
+                                bytes.push(((word & 0xFF00) >> 8) as u8);
+
                                 continue 'outer;
                             }
                         }
@@ -105,18 +110,21 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                             .with_context(|| format!("could not parse {}", imm))?;
                         let word: u16 =
                             opcode & 0x001F | (rd & 0x0007) << 5 | (imm as u16 & 0x00FF) << 8;
-                        words.push(word);
+                        bytes.push((word & 0x00FF) as u8);
+                        bytes.push(((word & 0xFF00) >> 8) as u8);
                     } else if imm.starts_with("0x") {
                         let imm = u16::from_str_radix(imm.trim_start_matches("0x"), 16)
                             .with_context(|| format!("could not parse {}", imm))?;
                         if symbol.as_str() == "l" {
                             let word: u16 =
                                 opcode & 0x001F | (rd & 0x0007) << 5 | (imm & 0x00FF) << 8;
-                            words.push(word);
+                            bytes.push((word & 0x00FF) as u8);
+                            bytes.push(((word & 0xFF00) >> 8) as u8);
                             continue 'outer;
                         } else if symbol.as_str() == "h" {
                             let word: u16 = opcode & 0x001F | (rd & 0x0007) << 5 | (imm & 0xFF00);
-                            words.push(word);
+                            bytes.push((word & 0x00FF) as u8);
+                            bytes.push(((word & 0xFF00) >> 8) as u8);
                             continue 'outer;
                         } else {
                             return Err(anyhow!("Unknown symbol {}", symbol));
@@ -128,12 +136,14 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                                 if symbol.as_str() == "l" {
                                     let word: u16 =
                                         opcode & 0x001F | (rd & 0x0007) << 5 | (imm & 0x00FF) << 8;
-                                    words.push(word);
+                                    bytes.push((word & 0x00FF) as u8);
+                                    bytes.push(((word & 0xFF00) >> 8) as u8);
                                     continue 'outer;
                                 } else if symbol.as_str() == "h" {
                                     let word: u16 =
                                         opcode & 0x001F | (rd & 0x0007) << 5 | (imm & 0xFF00);
-                                    words.push(word);
+                                    bytes.push((word & 0x00FF) as u8);
+                                    bytes.push(((word & 0xFF00) >> 8) as u8);
                                     continue 'outer;
                                 } else {
                                     return Err(anyhow!("Unknown symbol {}", symbol));
@@ -164,7 +174,8 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                     };
                     let rd = gen_reg(rd)?;
                     let word: u16 = 0x001E | (rd & 0x0007) << 5 | (func & 0x001F) << 11;
-                    words.push(word);
+                    bytes.push((word & 0x00FF) as u8);
+                    bytes.push(((word & 0xFF00) >> 8) as u8);
                 }
                 InstType::C2 => {
                     let func: u16 = match mnemonic.as_str() {
@@ -174,23 +185,34 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u16>> {
                         _ => unreachable!(),
                     };
                     let word: u16 = 0x001F | (func & 0x001F) << 11;
-                    words.push(word);
+                    bytes.push((word & 0x00FF) as u8);
+                    bytes.push(((word & 0xFF00) >> 8) as u8);
                 }
                 InstType::Trap => {
                     let word: u16 = 0xFFFF;
-                    words.push(word);
+                    bytes.push((word & 0x00FF) as u8);
+                    bytes.push(((word & 0xFF00) >> 8) as u8);
                 }
             },
-            Expr::Const { val, .. } => {
-                let word: u16 = u16::from_str_radix(&val, 16)
-                    .with_context(|| format!("could not parse 0x{}", val))?;
-                words.push(word);
+            Expr::Const {
+                val, const_type, ..
+            } => {
+                if const_type == ConstType::WORD {
+                    let word: u16 = u16::from_str_radix(&val, 16)
+                        .with_context(|| format!("could not parse 0x{}", val))?;
+                    bytes.push((word & 0x00FF) as u8);
+                    bytes.push(((word & 0xFF00) >> 8) as u8);
+                } else {
+                    let byte: u8 = u8::from_str_radix(&val, 16)
+                        .with_context(|| format!("could not parse 0x{}", val))?;
+                    bytes.push(byte);
+                }
             }
             _ => unreachable!(),
         }
     }
 
-    Ok(words)
+    Ok(bytes)
 }
 
 fn gen_reg(reg: String) -> Result<u16> {
@@ -218,20 +240,29 @@ mod test {
         let text = load_test_asm("test/asm/r_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b0000_1000_0000_0000,
-            0b0001_0001_0010_0000,
-            0b0001_1010_0100_0000,
-            0b0010_0011_0110_0000,
-            0b0010_1100_1000_0000,
-            0b0011_0101_1010_0000,
-            0b0011_1110_1100_0000,
-            0b0100_0111_1110_0000,
-            0b0100_1001_0000_0000,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b0000_0000,
+            0b0000_1000,
+            0b0010_0000,
+            0b0001_0001,
+            0b0100_0000,
+            0b0001_1010,
+            0b0110_0000,
+            0b0010_0011,
+            0b1000_0000,
+            0b0010_1100,
+            0b1010_0000,
+            0b0011_0101,
+            0b1100_0000,
+            0b0011_1110,
+            0b1110_0000,
+            0b0100_0111,
+            0b0000_0000,
+            0b0100_1001,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
 
         Ok(())
     }
@@ -241,22 +272,33 @@ mod test {
         let text = load_test_asm("test/asm/i5_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b0000_1000_0000_0001,
-            0b0000_1001_0010_0010,
-            0b0000_1010_0100_0011,
-            0b1111_1011_0110_0100,
-            0b0000_1100_1000_0101,
-            0b1111_1101_1010_0110,
-            0b0000_1110_1100_0111,
-            0b1111_1111_1110_1000,
-            0b0000_1001_0000_1001,
-            0b1111_1011_0100_1010,
-            0b0000_1101_1000_1011,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b0000_0001,
+            0b0000_1000,
+            0b0010_0010,
+            0b0000_1001,
+            0b0100_0011,
+            0b0000_1010,
+            0b0110_0100,
+            0b1111_1011,
+            0b1000_0101,
+            0b0000_1100,
+            0b1010_0110,
+            0b1111_1101,
+            0b1100_0111,
+            0b0000_1110,
+            0b1110_1000,
+            0b1111_1111,
+            0b0000_1001,
+            0b0000_1001,
+            0b0100_1010,
+            0b1111_1011,
+            0b1000_1011,
+            0b0000_1101,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
 
         Ok(())
     }
@@ -266,14 +308,17 @@ mod test {
         let text = load_test_asm("test/asm/i8_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b0000_0001_0000_1100,
-            0b0000_0001_0010_1101,
-            0b0000_0000_0100_1110,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b0000_1100,
+            0b0000_0001,
+            0b0010_1101,
+            0b0000_0001,
+            0b0100_1110,
+            0b0000_0000,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
         Ok(())
     }
 
@@ -282,26 +327,41 @@ mod test {
         let text = load_test_asm("test/asm/c1_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b0000_1000_0001_1110,
-            0b0001_0000_0011_1110,
-            0b0001_1000_0101_1110,
-            0b0010_0000_0111_1110,
-            0b0010_1000_1001_1110,
-            0b0011_0000_1011_1110,
-            0b0011_1000_1101_1110,
-            0b0100_0000_1111_1110,
-            0b0100_1000_0001_1110,
-            0b0101_0000_0011_1110,
-            0b0101_1000_0101_1110,
-            0b0110_0000_0111_1110,
-            0b0110_1000_1001_1110,
-            0b0111_0000_1011_1110,
-            0b0111_1000_1101_1110,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b0001_1110,
+            0b0000_1000,
+            0b0011_1110,
+            0b0001_0000,
+            0b0101_1110,
+            0b0001_1000,
+            0b0111_1110,
+            0b0010_0000,
+            0b1001_1110,
+            0b0010_1000,
+            0b1011_1110,
+            0b0011_0000,
+            0b1101_1110,
+            0b0011_1000,
+            0b1111_1110,
+            0b0100_0000,
+            0b0001_1110,
+            0b0100_1000,
+            0b0011_1110,
+            0b0101_0000,
+            0b0101_1110,
+            0b0101_1000,
+            0b0111_1110,
+            0b0110_0000,
+            0b1001_1110,
+            0b0110_1000,
+            0b1011_1110,
+            0b0111_0000,
+            0b1101_1110,
+            0b0111_1000,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
 
         Ok(())
     }
@@ -311,14 +371,17 @@ mod test {
         let text = load_test_asm("test/asm/c2_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b0000_1000_0001_1111,
-            0b0001_0000_0001_1111,
-            0b0001_1000_0001_1111,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b0001_1111,
+            0b0000_1000,
+            0b0001_1111,
+            0b0001_0000,
+            0b0001_1111,
+            0b0001_1000,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
         Ok(())
     }
 
@@ -327,26 +390,30 @@ mod test {
         let text = load_test_asm("test/asm/trap_inst_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![0b1111_1111_1111_1111];
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![0b1111_1111, 0b1111_1111];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
         Ok(())
     }
 
     #[test]
-    fn can_gen_word() -> Result<()> {
-        let text = load_test_asm("test/asm/word_test.asm");
+    fn can_gen_direcitve() -> Result<()> {
+        let text = load_test_asm("test/asm/directive_test.asm");
 
         let (exprs, label_table) = parse(text, 0)?;
-        let result_words = gen(exprs, label_table)?;
-        let expect_words: Vec<u16> = vec![
-            0b1111_1111_1111_1111,
-            0b0000_0000_0010_1101,
-            0b0000_0000_0010_1110,
+        let result_bytes = gen(exprs, label_table)?;
+        let expect_bytes: Vec<u8> = vec![
+            0b1111_1111,
+            0b1111_1111,
+            0b1111_0000,
+            0b0010_1101,
+            0b0000_0000,
+            0b0010_1110,
+            0b0000_0000,
         ];
 
-        assert_eq!(result_words, expect_words);
+        assert_eq!(result_bytes, expect_bytes);
         Ok(())
     }
 

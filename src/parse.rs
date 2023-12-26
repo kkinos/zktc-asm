@@ -19,6 +19,7 @@ pub enum Expr {
         address: u16,
     },
     Const {
+        const_type: ConstType,
         val: String,
         address: u16,
     },
@@ -36,6 +37,12 @@ pub enum InstType {
     C1,
     C2,
     Trap,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ConstType {
+    WORD,
+    BYTE,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,9 +86,19 @@ pub fn parse(text: String, base_address: u16) -> Result<(Vec<Expr>, Vec<Label>)>
                     });
                     address += 2;
                 }
-                Expr::Const { val, .. } => {
-                    exprs.push(Expr::Const { val, address });
-                    address += 2;
+                Expr::Const {
+                    val, const_type, ..
+                } => {
+                    exprs.push(Expr::Const {
+                        val,
+                        const_type: const_type.clone(),
+                        address,
+                    });
+                    if const_type == ConstType::BYTE {
+                        address += 1;
+                    } else {
+                        address += 2;
+                    }
                 }
             },
             Err(_) => {
@@ -263,6 +280,20 @@ fn parse_word(line: &str) -> IResult<&str, Expr> {
             Ok((
                 line,
                 Expr::Const {
+                    const_type: ConstType::WORD,
+                    val: hex.to_string(),
+                    address: 0,
+                },
+            ))
+        }
+        "byte" => {
+            let (line, _) = multispace0(line)?;
+            let (line, _) = tag("0x")(line)?;
+            let (line, hex) = hex_digit1(line)?;
+            Ok((
+                line,
+                Expr::Const {
+                    const_type: ConstType::BYTE,
                     val: hex.to_string(),
                     address: 0,
                 },
@@ -808,14 +839,19 @@ mod test {
     }
 
     #[test]
-    fn can_parse_word() -> Result<()> {
-        let text = load_test_asm("test/asm/word_test.asm");
-
+    fn can_parse_directive() -> Result<()> {
+        let text = load_test_asm("test/asm/directive_test.asm");
         let (result_exprs, result_label_table) = parse(text, 0)?;
         let expect_exprs: Vec<Expr> = vec![
             Expr::Const {
                 val: "ffff".to_string(),
+                const_type: ConstType::WORD,
                 address: 0,
+            },
+            Expr::Const {
+                val: "f0".to_string(),
+                const_type: ConstType::BYTE,
+                address: 2,
             },
             Expr::Inst {
                 inst_type: InstType::I8,
@@ -824,7 +860,7 @@ mod test {
                 rs: "".to_string(),
                 imm: "word".to_string(),
                 symbol: "l".to_string(),
-                address: 2,
+                address: 3,
             },
             Expr::Inst {
                 inst_type: InstType::I8,
@@ -833,13 +869,19 @@ mod test {
                 rs: "".to_string(),
                 imm: "word".to_string(),
                 symbol: "h".to_string(),
-                address: 4,
+                address: 5,
             },
         ];
-        let expect_label_table: Vec<Label> = vec![Label {
-            name: "word".to_string(),
-            address: 0,
-        }];
+        let expect_label_table: Vec<Label> = vec![
+            Label {
+                name: "word".to_string(),
+                address: 0,
+            },
+            Label {
+                name: "byte".to_string(),
+                address: 2,
+            },
+        ];
         assert_eq!(result_exprs, expect_exprs);
         assert_eq!(result_label_table, expect_label_table);
 
