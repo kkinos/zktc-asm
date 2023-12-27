@@ -197,7 +197,7 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u8>> {
             Expr::Const {
                 val, const_type, ..
             } => {
-                if const_type == ConstType::WORD {
+                if const_type == ConstType::Word {
                     let word: u16 = u16::from_str_radix(&val, 16)
                         .with_context(|| format!("could not parse 0x{}", val))?;
                     bytes.push((word & 0x00FF) as u8);

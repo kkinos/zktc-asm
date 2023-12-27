@@ -1,8 +1,11 @@
 use anyhow::{anyhow, Result};
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till},
-    character::complete::{alpha1, alphanumeric1, hex_digit1, multispace0},
+    bytes::complete::{tag, take_till, take_while1},
+    character::{
+        complete::{alpha1, alphanumeric1, hex_digit1, multispace0},
+        is_alphanumeric,
+    },
     error::ErrorKind,
     IResult,
 };
@@ -41,8 +44,8 @@ pub enum InstType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ConstType {
-    WORD,
-    BYTE,
+    Word,
+    Byte,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -94,7 +97,7 @@ pub fn parse(text: String, base_address: u16) -> Result<(Vec<Expr>, Vec<Label>)>
                         const_type: const_type.clone(),
                         address,
                     });
-                    if const_type == ConstType::BYTE {
+                    if const_type == ConstType::Byte {
                         address += 1;
                     } else {
                         address += 2;
@@ -280,7 +283,7 @@ fn parse_word(line: &str) -> IResult<&str, Expr> {
             Ok((
                 line,
                 Expr::Const {
-                    const_type: ConstType::WORD,
+                    const_type: ConstType::Word,
                     val: hex.to_string(),
                     address: 0,
                 },
@@ -293,7 +296,7 @@ fn parse_word(line: &str) -> IResult<&str, Expr> {
             Ok((
                 line,
                 Expr::Const {
-                    const_type: ConstType::BYTE,
+                    const_type: ConstType::Byte,
                     val: hex.to_string(),
                     address: 0,
                 },
@@ -307,7 +310,7 @@ fn parse_word(line: &str) -> IResult<&str, Expr> {
 }
 
 fn parse_label(line: &str) -> IResult<&str, Expr> {
-    let (line, name) = alphanumeric1(line)?;
+    let (line, name) = take_while1(is_ident)(line)?;
     let (line, _) = tag(":")(line)?;
     Ok((
         line,
@@ -316,6 +319,10 @@ fn parse_label(line: &str) -> IResult<&str, Expr> {
             address: 0,
         },
     ))
+}
+
+pub fn is_ident(ch: char) -> bool {
+    is_alphanumeric(ch as u8) || ch == '_' || ch == '-'
 }
 
 #[cfg(test)]
@@ -845,12 +852,12 @@ mod test {
         let expect_exprs: Vec<Expr> = vec![
             Expr::Const {
                 val: "ffff".to_string(),
-                const_type: ConstType::WORD,
+                const_type: ConstType::Word,
                 address: 0,
             },
             Expr::Const {
                 val: "f0".to_string(),
-                const_type: ConstType::BYTE,
+                const_type: ConstType::Byte,
                 address: 2,
             },
             Expr::Inst {
