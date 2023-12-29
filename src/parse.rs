@@ -150,8 +150,8 @@ fn parse_inst(line: &str) -> IResult<&str, Expr> {
             ))
         }
         // I5 Instruction
-        "addi" | "subi" | "beq" | "bnq" | "blt" | "bge" | "bltu" | "bgeu" | "jalr" | "lw"
-        | "sw" => {
+        "addi" | "subi" | "beq" | "bnq" | "blt" | "bge" | "bltu" | "bgeu" | "jalr" | "lh"
+        | "lhu" | "lw" | "sh" | "sw" => {
             let (line, _) = multispace0(line)?;
             let (line, rd) = alphanumeric1(line)?;
             let (line, _) = multispace0(line)?;
@@ -447,7 +447,7 @@ mod test {
             },
             Label {
                 name: "end".to_string(),
-                address: 22,
+                address: 28,
             },
         ];
         let expect_exprs: Vec<Expr> = vec![
@@ -534,7 +534,7 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::I5,
-                mnemonic: "lw".to_string(),
+                mnemonic: "lh".to_string(),
                 rd: "x2".to_string(),
                 rs: "x3".to_string(),
                 imm: "-1".to_string(),
@@ -543,12 +543,39 @@ mod test {
             },
             Expr::Inst {
                 inst_type: InstType::I5,
-                mnemonic: "sw".to_string(),
+                mnemonic: "lhu".to_string(),
                 rd: "x4".to_string(),
                 rs: "x5".to_string(),
                 imm: "1".to_string(),
                 symbol: "".to_string(),
                 address: 20,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "lw".to_string(),
+                rd: "x6".to_string(),
+                rs: "x7".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 22,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "sh".to_string(),
+                rd: "x0".to_string(),
+                rs: "x1".to_string(),
+                imm: "1".to_string(),
+                symbol: "".to_string(),
+                address: 24,
+            },
+            Expr::Inst {
+                inst_type: InstType::I5,
+                mnemonic: "sw".to_string(),
+                rd: "x2".to_string(),
+                rs: "x3".to_string(),
+                imm: "-1".to_string(),
+                symbol: "".to_string(),
+                address: 26,
             },
         ];
         assert_eq!(result_label_table, expect_label_table);

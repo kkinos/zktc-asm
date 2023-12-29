@@ -9,6 +9,9 @@ start:	// address 0
 	bltu x6, t0, 1
 	bgeu x7, t1, -1
 	jalr x0, x1, 1
-	lw x2, x3, -1
-	sw x4, x5, 1
-end:	// address 22
+	lh x2, x3, -1
+	lhu x4, x5, 1
+	lw x6, x7, -1
+	sh x0, x1, 1
+	sw x2, x3, -1
+end:	// address 28

@@ -46,8 +46,11 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u8>> {
                         "bltu" => 0b00111,
                         "bgeu" => 0b01000,
                         "jalr" => 0b01001,
-                        "lw" => 0b01010,
-                        "sw" => 0b01011,
+                        "lh" => 0b01010,
+                        "lhu" => 0b01011,
+                        "lw" => 0b01100,
+                        "sh" => 0b01101,
+                        "sw" => 0b01110,
                         _ => unreachable!(),
                     };
                     let rd = gen_reg(rd)?;
@@ -296,6 +299,12 @@ mod test {
             0b1111_1011,
             0b1000_1011,
             0b0000_1101,
+            0b1100_1100,
+            0b1111_1111,
+            0b0000_1101,
+            0b0000_1001,
+            0b0100_1110,
+            0b1111_1011,
         ];
 
         assert_eq!(result_bytes, expect_bytes);
