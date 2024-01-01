@@ -85,9 +85,9 @@ pub fn gen(exprs: Vec<Expr>, label_table: Vec<Label>) -> Result<Vec<u8>> {
                 }
                 InstType::I8 => {
                     let opcode: u16 = match mnemonic.as_str() {
-                        "jal" => 0b01100,
-                        "lil" => 0b01101,
-                        "lih" => 0b01110,
+                        "jal" => 0b10000,
+                        "lil" => 0b10001,
+                        "lih" => 0b10010,
                         _ => unreachable!(),
                     };
                     let rd = gen_reg(rd)?;
@@ -319,11 +319,11 @@ mod test {
         let (exprs, label_table) = parse(text, 0)?;
         let result_bytes = gen(exprs, label_table)?;
         let expect_bytes: Vec<u8> = vec![
-            0b0000_1100,
+            0b0001_0000,
             0b0000_0001,
-            0b0010_1101,
+            0b0011_0001,
             0b0000_0001,
-            0b0100_1110,
+            0b0101_0010,
             0b0000_0000,
         ];
 
@@ -416,9 +416,9 @@ mod test {
             0b1111_1111,
             0b1111_1111,
             0b1111_0000,
-            0b0010_1101,
+            0b0011_0001,
             0b0000_0000,
-            0b0010_1110,
+            0b0011_0010,
             0b0000_0000,
         ];
 
