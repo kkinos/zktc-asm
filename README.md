@@ -1,11 +1,11 @@
 # zktc-asm
 
-zktc-asm is an assembler for [ZKTC](https://github.com/kinpoko/zktc) implemented in Rust.
+zktc-asm is an assembler for [ZKTC](https://github.com/kkinos/zktc) implemented in Rust.
 
 # Install
 
 ```sh
-cargo install --git https://github.com/kinpoko/zktc-asm.git
+cargo install --git https://github.com/kkinos/zktc-asm.git
 ```
 
 # Usage

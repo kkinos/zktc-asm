@@ -7,7 +7,7 @@ use clap::Parser;
 use clap_num::maybe_hex;
 
 #[derive(Parser)]
-#[clap(version = "0.1", author = "kinpoko", about = "ZKTC assembler")]
+#[clap(version = "0.1", author = "kkinos", about = "ZKTC assembler")]
 struct Args {
     /// .asm file path
     file_path: std::path::PathBuf,
